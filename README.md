@@ -7,3 +7,5 @@ Classe Start
   
 app.propierties
 verifyPath=/Users/cfortuna/Desktop/uppaal/bin-Win32/verifyta
+
+Executar a classe Start
