@@ -1,0 +1,414 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
+<nta>
+	<declaration>// Place global declarations here.
+const int MAX_TYPE = 3;
+typedef int [1, MAX_TYPE] s_type;
+const int MAX_IMP = 5;
+typedef int [1, MAX_IMP] s_imp;
+
+const int MAX_SSS = 100;
+const int MAX_SENSOR = 9;
+const int MIN_SENSOR = 0;
+
+
+
+//&lt;runtime-parameters&gt;
+//&lt;probability&gt;
+const int p_ADD = 86, p_REMOVE = 14, p_DOWNLOAD = 88, p_NODOWNLOAD = 20;
+//&lt;/probability&gt;
+//&lt;feature-type-selection&gt;
+int cFeatures[s_type] = {5,5,5};
+//&lt;/feature-type-selection&gt;
+//&lt;response-time&gt;
+const double sRT[s_type][s_imp] ={{5.7,7.3,3.8,9.5,18.6},{11.0,9.4,20.0,8.0,9.0},{8.0,7.7,11.0,10.0,15.0}};
+//&lt;/response-time&gt;
+//&lt;number-sensor-solution&gt;
+int sensorInSolution = 3;
+//&lt;/number-sensor-solution&gt;
+//&lt;queue-length&gt;
+const int queueLength[s_type][s_imp] ={{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0}};
+//&lt;/queue-length&gt;
+//&lt;simulation-simultaneous-sensor&gt;
+const int sss[MAX_SSS] = {3,2,4,5,7,4,8,2,1,0,2,4,4,0,7,6,7,2,1,1,2,1,5,6,5,5,5,3,6,4,4,3,0,5,4,0,3,6,2,0,8,4,1,2,2,1,1,7,3,2,0,4,1,1,0,6,0,0,2,0,3,0,5,3,4,8,3,7,1,0,1,4,6,2,2,0,5,6,8,6,1,0,8,7,5,3,4,5,3,8,7,5,5,2,3,0,8,5,6,3};
+
+//&lt;/simulation-simultaneous-sensor&gt;
+//&lt;index-sss&gt;
+int indexSSS = 1;
+//&lt;/index-sss&gt;
+//&lt;/runtime-parameters&gt;
+
+// Type of Services
+const int DOWNLOAD = 1, INSTALL = 2, UNISTALL = 3;
+
+// Channels
+// Patient
+broadcast chan sensor_in, sensor_out, done, uninstallSensor, installSensor, serviced;
+int invocations;</declaration>
+	<template>
+		<name x="5" y="5">ManagedSystem</name>
+		<declaration>// Place local declarations here.
+
+</declaration>
+		<location id="id0" x="-697" y="136">
+			<urgent/>
+		</location>
+		<location id="id1" x="-493" y="136">
+		</location>
+		<location id="id2" x="-612" y="-51">
+			<name x="-595" y="-59">WaitingForRequest</name>
+		</location>
+		<location id="id3" x="-501" y="-102">
+			<name x="-535" y="-153">DetectSensor</name>
+			<urgent/>
+		</location>
+		<location id="id4" x="-493" y="8">
+			<name x="-552" y="25">DetectSensorOut</name>
+			<urgent/>
+		</location>
+		<location id="id5" x="-850" y="-51">
+			<name x="-867" y="-94">Start</name>
+			<committed/>
+		</location>
+		<location id="id6" x="-382" y="-42">
+			<committed/>
+		</location>
+		<init ref="id5"/>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id2"/>
+			<label kind="synchronisation" x="-765" y="34">serviced!</label>
+			<nail x="-697" y="8"/>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id0"/>
+			<label kind="synchronisation" x="-612" y="110">done?</label>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id1"/>
+			<label kind="assignment" x="-433" y="110">invocations++</label>
+			<nail x="-314" y="-42"/>
+			<nail x="-314" y="136"/>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id6"/>
+			<label kind="synchronisation" x="-467" y="8">uninstallSensor!</label>
+			<nail x="-382" y="8"/>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id6"/>
+			<label kind="synchronisation" x="-476" y="-127">installSensor!</label>
+			<nail x="-382" y="-102"/>
+			<nail x="-382" y="-59"/>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id4"/>
+			<label kind="synchronisation" x="-637" y="8">sensor_out?</label>
+			<nail x="-612" y="8"/>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id3"/>
+			<label kind="synchronisation" x="-620" y="-127">sensor_in?</label>
+			<nail x="-612" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id2"/>
+		</transition>
+	</template>
+	<template>
+		<name>AssistanceService</name>
+		<declaration>double TotalST;
+double avgSTime;
+
+double getDOWResponseTime(){
+    return sss[indexSSS] * sRT[DOWNLOAD][cFeatures[DOWNLOAD]];
+}
+
+double getINSResponseTime(){
+    return sss[indexSSS] * sRT[INSTALL][cFeatures[INSTALL]];
+}
+
+double getUNIResponseTime(){
+    return sss[indexSSS] * sRT[UNISTALL][cFeatures[UNISTALL]];
+}
+
+double getDOWQLen(){
+    return queueLength[DOWNLOAD][cFeatures[DOWNLOAD]];
+}
+
+double getINSQLen(){
+    return queueLength[INSTALL][cFeatures[INSTALL]];
+}
+
+double getUNIQLen(){
+    return queueLength[UNISTALL][cFeatures[UNISTALL]];
+}</declaration>
+		<location id="id7" x="42" y="-42">
+			<committed/>
+		</location>
+		<location id="id8" x="-714" y="102">
+			<name x="-807" y="93">Download</name>
+			<committed/>
+		</location>
+		<location id="id9" x="-527" y="-51">
+			<committed/>
+		</location>
+		<location id="id10" x="-365" y="102">
+			<name x="-391" y="68">Waiting</name>
+			<urgent/>
+		</location>
+		<location id="id11" x="-187" y="-212">
+			<name x="-204" y="-254">Start</name>
+		</location>
+		<location id="id12" x="42" y="-212">
+			<name x="59" y="-221">UninstallQueued</name>
+			<committed/>
+		</location>
+		<location id="id13" x="-187" y="102">
+			<name x="-255" y="127">ResponseTimeCalculated</name>
+			<urgent/>
+		</location>
+		<location id="id14" x="-357" y="-212">
+			<name x="-374" y="-195">Verify</name>
+			<committed/>
+		</location>
+		<location id="id15" x="-527" y="-212">
+			<urgent/>
+		</location>
+		<location id="id16" x="-714" y="8">
+			<name x="-850" y="-8">DownloadQueued</name>
+			<urgent/>
+		</location>
+		<location id="id17" x="-527" y="102">
+			<name x="-552" y="127">Install</name>
+			<committed/>
+		</location>
+		<branchpoint id="id18" x="-527" y="9">
+		</branchpoint>
+		<init ref="id11"/>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id13"/>
+			<label kind="assignment" x="59" y="51">TotalST = TotalST +
+getUNIResponseTime()</label>
+			<nail x="42" y="102"/>
+		</transition>
+		<transition>
+			<source ref="id12"/>
+			<target ref="id7"/>
+			<label kind="assignment" x="51" y="-153">TotalST = TotalST +
+getUNIResponseTime()*
+getUNIQLen()</label>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id17"/>
+			<label kind="assignment" x="-705" y="136">TotalST = TotalST +
+getDOWResponseTime()</label>
+		</transition>
+		<transition>
+			<source ref="id16"/>
+			<target ref="id8"/>
+			<label kind="assignment" x="-892" y="17">TotalST = TotalST +
+getDOWResponseTime()*
+getDOWQLen()</label>
+		</transition>
+		<transition>
+			<source ref="id15"/>
+			<target ref="id9"/>
+			<label kind="assignment" x="-518" y="-153">TotalST = TotalST + 
+getINSResponseTime()</label>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id18"/>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id13"/>
+		</transition>
+		<transition>
+			<source ref="id17"/>
+			<target ref="id10"/>
+		</transition>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id17"/>
+			<label kind="probability" x="-518" y="25">p_NODOWNLOAD</label>
+		</transition>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id16"/>
+			<label kind="probability" x="-663" y="-25">p_DOWNLOAD</label>
+		</transition>
+		<transition>
+			<source ref="id14"/>
+			<target ref="id15"/>
+			<label kind="assignment" x="-493" y="-280">TotalST = TotalST + 
+getINSResponseTime()*
+getINSQLen()</label>
+		</transition>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id11"/>
+			<label kind="synchronisation" x="-178" y="-119">done!</label>
+			<label kind="assignment" x="-178" y="-34">avgSTime = 
+TotalST/invocations</label>
+		</transition>
+		<transition>
+			<source ref="id11"/>
+			<target ref="id14"/>
+			<label kind="synchronisation" x="-314" y="-238">installSensor?</label>
+		</transition>
+		<transition>
+			<source ref="id11"/>
+			<target ref="id12"/>
+			<label kind="synchronisation" x="-136" y="-238">uninstallSensor?</label>
+		</transition>
+	</template>
+	<template>
+		<name>Sensor</name>
+		<declaration>clock  t ;
+
+void updateIndexSSS(int &amp;index){
+
+    index = index + 1;
+
+    if(index &gt;= MAX_SSS) {
+        index = 0;
+    }
+}</declaration>
+		<location id="id19" x="-459" y="-229">
+			<urgent/>
+		</location>
+		<location id="id20" x="-459" y="-399">
+			<urgent/>
+		</location>
+		<location id="id21" x="146" y="-297">
+		</location>
+		<location id="id22" x="-756" y="-306">
+			<name x="-816" y="-332">Waiting</name>
+			<label kind="invariant" x="-807" y="-298">t&lt;1</label>
+		</location>
+		<location id="id23" x="-204" y="-399">
+			<name x="-238" y="-433">AddSensor</name>
+			<urgent/>
+		</location>
+		<location id="id24" x="-24" y="-399">
+			<name x="-67" y="-433">ProcessingAdd</name>
+			<committed/>
+		</location>
+		<location id="id25" x="-204" y="-229">
+			<name x="-238" y="-212">RemovedSensor</name>
+			<urgent/>
+		</location>
+		<location id="id26" x="-16" y="-229">
+			<name x="-75" y="-212">ProcessingRemove</name>
+			<committed/>
+		</location>
+		<branchpoint id="id27" x="-569" y="-306">
+		</branchpoint>
+		<init ref="id22"/>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id22"/>
+			<label kind="guard" x="-688" y="-187">(sensorInSolution - 
+sss[indexSSS])&lt; 
+MIN_SENSOR</label>
+			<nail x="-459" y="-127"/>
+			<nail x="-756" y="-127"/>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id22"/>
+			<label kind="guard" x="-697" y="-501">(sensorInSolution + 
+sss[indexSSS])&gt; 
+MAX_SENSOR</label>
+			<nail x="-459" y="-510"/>
+			<nail x="-756" y="-510"/>
+		</transition>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id25"/>
+			<label kind="guard" x="-399" y="-289">(sensorInSolution - 
+sss[indexSSS])&gt;= 
+MIN_SENSOR</label>
+			<label kind="assignment" x="-408" y="-221">sensorInSolution = 
+sensorInSolution - 
+sss[indexSSS]</label>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id23"/>
+			<label kind="guard" x="-408" y="-459">(sensorInSolution + 
+sss[indexSSS])&lt;= 
+MAX_SENSOR</label>
+			<label kind="assignment" x="-408" y="-399">sensorInSolution = 
+sensorInSolution + 
+sss[indexSSS]</label>
+		</transition>
+		<transition>
+			<source ref="id27"/>
+			<target ref="id19"/>
+			<label kind="probability" x="-586" y="-263">p_REMOVE</label>
+		</transition>
+		<transition>
+			<source ref="id27"/>
+			<target ref="id20"/>
+			<label kind="probability" x="-569" y="-365">p_ADD</label>
+		</transition>
+		<transition>
+			<source ref="id21"/>
+			<target ref="id22"/>
+			<label kind="synchronisation" x="-272" y="-127">serviced?</label>
+			<label kind="assignment" x="-255" y="-93">t = 0</label>
+			<nail x="230" y="-297"/>
+			<nail x="229" y="-102"/>
+			<nail x="-833" y="-102"/>
+			<nail x="-833" y="-306"/>
+		</transition>
+		<transition>
+			<source ref="id26"/>
+			<target ref="id21"/>
+		</transition>
+		<transition>
+			<source ref="id24"/>
+			<target ref="id21"/>
+		</transition>
+		<transition>
+			<source ref="id22"/>
+			<target ref="id27"/>
+			<label kind="guard" x="-680" y="-331">t&lt;3</label>
+			<label kind="assignment" x="-739" y="-297">updateIndexSSS(indexSSS)</label>
+		</transition>
+		<transition>
+			<source ref="id25"/>
+			<target ref="id26"/>
+			<label kind="synchronisation" x="-153" y="-255">sensor_out!</label>
+		</transition>
+		<transition>
+			<source ref="id23"/>
+			<target ref="id24"/>
+			<label kind="synchronisation" x="-145" y="-399">sensor_in!</label>
+		</transition>
+	</template>
+	<system>
+system ManagedSystem, AssistanceService, Sensor;
+    
+</system>
+	<queries>
+		<query>
+			<formula>simulate 1[&lt;=50]{AssistanceService.avgSTime}
+			</formula>
+			<comment>
+			</comment>
+		</query>
+	</queries>
+</nta>

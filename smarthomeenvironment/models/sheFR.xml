@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
+<nta>
+	<declaration>// Place global declarations here.
+const int MAX_TYPE = 3;
+typedef int [1, MAX_TYPE] s_type;
+const int MAX_IMP = 5;
+typedef int [1, MAX_IMP] s_imp;
+
+const int MAX_SSS = 100;
+const int MAX_SENSOR = 9;
+const int MIN_SENSOR = 0;
+
+
+
+//&lt;runtime-parameters&gt;
+//&lt;probability&gt;
+const int p_ADD = 86, p_REMOVE = 14, p_DOWNLOAD = 88, p_NODOWNLOAD = 20;
+//&lt;/probability&gt;
+//&lt;feature-type-selection&gt;
+int cFeatures[s_type] = {5,5,5};
+//&lt;/feature-type-selection&gt;
+//&lt;failure-rates&gt;
+const double sFailureRates[s_type][s_imp] ={{0.0475246670113906,0.0,0.07323794197798615,0.00923885662552132,0.0},{0.023491398940849645,0.0,0.006508319989585194,0.0,0.0},{0.013574991866800879,0.0,0.05419712574642252,0.0851085801177255,0.0}};
+//&lt;/failure-rates&gt;
+//&lt;number-sensor-solution&gt;
+int sensorInSolution = 3;
+//&lt;/number-sensor-solution&gt;
+//&lt;simulation-simultaneous-sensor&gt;
+const int sss[MAX_SSS] = {5,3,6,3,1,8,7,6,8,0,7,4,7,2,4,8,5,7,3,2,2,0,3,6,0,7,4,3,6,2,0,2,2,4,5,0,1,4,8,1,1,8,3,8,1,0,8,3,0,4,2,7,6,1,5,0,7,0,0,0,1,7,2,8,5,7,2,1,5,1,1,8,6,7,0,5,3,6,7,6,6,4,8,6,7,0,5,3,2,0,5,8,1,5,2,7,7,5,6,4};
+
+//&lt;/simulation-simultaneous-sensor&gt;
+//&lt;index-sss&gt;
+int indexSSS = 1;
+//&lt;/index-sss&gt;
+//&lt;/runtime-parameters&gt;
+
+// Type of Services
+const int DOWNLOAD = 1, INSTALL = 2, UNISTALL = 3;
+
+// Channels
+// Patient
+broadcast chan sensor_in, sensor_out, done, uninstallSensor, installSensor, serviced;
+int invocations;</declaration>
+	<template>
+		<name x="5" y="5">ManagedSystem</name>
+		<declaration>// Place local declarations here.
+
+
+
+
+</declaration>
+		<location id="id0" x="-697" y="136">
+			<urgent/>
+		</location>
+		<location id="id1" x="-493" y="136">
+		</location>
+		<location id="id2" x="-612" y="-51">
+			<name x="-595" y="-59">WaitingForRequest</name>
+		</location>
+		<location id="id3" x="-501" y="-102">
+			<name x="-535" y="-153">DetectSensor</name>
+			<urgent/>
+		</location>
+		<location id="id4" x="-493" y="8">
+			<name x="-552" y="25">DetectSensorOut</name>
+			<urgent/>
+		</location>
+		<location id="id5" x="-850" y="-51">
+			<name x="-867" y="-94">Start</name>
+			<committed/>
+		</location>
+		<location id="id6" x="-382" y="-42">
+			<committed/>
+		</location>
+		<init ref="id5"/>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id2"/>
+			<label kind="synchronisation" x="-765" y="34">serviced!</label>
+			<nail x="-697" y="8"/>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id0"/>
+			<label kind="synchronisation" x="-612" y="110">done?</label>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id1"/>
+			<label kind="assignment" x="-433" y="110">invocations++</label>
+			<nail x="-314" y="-42"/>
+			<nail x="-314" y="136"/>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id6"/>
+			<label kind="synchronisation" x="-467" y="8">uninstallSensor!</label>
+			<nail x="-382" y="8"/>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id6"/>
+			<label kind="synchronisation" x="-476" y="-127">installSensor!</label>
+			<nail x="-382" y="-102"/>
+			<nail x="-382" y="-59"/>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id4"/>
+			<label kind="synchronisation" x="-637" y="8">sensor_out?</label>
+			<nail x="-612" y="8"/>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id3"/>
+			<label kind="synchronisation" x="-620" y="-127">sensor_in?</label>
+			<nail x="-612" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id2"/>
+		</transition>
+	</template>
+	<template>
+		<name>AssistanceService</name>
+		<declaration>double TotalFR;
+double fRate;
+double avgFRate;
+
+double getDOWNFR(){
+    return sss[indexSSS] * sFailureRates[DOWNLOAD][cFeatures[DOWNLOAD]];
+}
+
+double getINSTFR(){
+    return sss[indexSSS] * sFailureRates[INSTALL][cFeatures[INSTALL]];
+}
+
+double getUNISFR(){
+    return sss[indexSSS] * sFailureRates[UNISTALL][cFeatures[UNISTALL]];
+}</declaration>
+		<location id="id7" x="-425" y="102">
+			<name x="-451" y="68">Waiting</name>
+			<urgent/>
+		</location>
+		<location id="id8" x="-323" y="-212">
+			<name x="-340" y="-254">Start</name>
+		</location>
+		<location id="id9" x="-93" y="-212">
+			<name x="-103" y="-246">Uninstall</name>
+			<committed/>
+		</location>
+		<location id="id10" x="-321" y="102">
+			<name x="-357" y="127">FrateCalculated</name>
+			<urgent/>
+		</location>
+		<location id="id11" x="-527" y="-212">
+			<name x="-552" y="-255">Verify</name>
+			<committed/>
+		</location>
+		<location id="id12" x="-527" y="-127">
+			<urgent/>
+		</location>
+		<location id="id13" x="-594" y="8">
+			<name x="-688" y="0">Download</name>
+			<urgent/>
+		</location>
+		<location id="id14" x="-527" y="102">
+			<name x="-552" y="127">Install</name>
+			<committed/>
+		</location>
+		<branchpoint id="id15" x="-527" y="-59">
+		</branchpoint>
+		<init ref="id8"/>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id10"/>
+		</transition>
+		<transition>
+			<source ref="id14"/>
+			<target ref="id7"/>
+		</transition>
+		<transition>
+			<source ref="id15"/>
+			<target ref="id14"/>
+			<label kind="probability" x="-518" y="0">p_NODOWNLOAD</label>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id10"/>
+			<label kind="assignment" x="-76" y="-8">fRate = getUNISFR()</label>
+			<nail x="-93" y="102"/>
+		</transition>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id14"/>
+			<label kind="assignment" x="-731" y="42">fRate = fRate + 
+(1-fRate) * getDOWNFR()</label>
+		</transition>
+		<transition>
+			<source ref="id15"/>
+			<target ref="id13"/>
+			<label kind="probability" x="-671" y="-59">p_DOWNLOAD</label>
+		</transition>
+		<transition>
+			<source ref="id11"/>
+			<target ref="id12"/>
+			<label kind="assignment" x="-518" y="-187">fRate = getINSTFR()</label>
+		</transition>
+		<transition>
+			<source ref="id12"/>
+			<target ref="id15"/>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id8"/>
+			<label kind="synchronisation" x="-314" y="-119">done!</label>
+			<label kind="assignment" x="-314" y="-93">TotalFR = 
+TotalFR + fRate,
+avgFRate = 
+TotalFR/invocations</label>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id11"/>
+			<label kind="synchronisation" x="-476" y="-238">installSensor?</label>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id9"/>
+			<label kind="synchronisation" x="-272" y="-238">uninstallSensor?</label>
+		</transition>
+	</template>
+	<template>
+		<name>Sensor</name>
+		<declaration>clock  t ;
+
+void updateIndexSSS(int &amp;index){
+
+    index = index + 1;
+
+    if(index &gt;= MAX_SSS) {
+        index = 0;
+    }
+}</declaration>
+		<location id="id16" x="-118" y="-102">
+			<name x="-170" y="-144">RemovedSensor</name>
+			<urgent/>
+		</location>
+		<location id="id17" x="-126" y="-272">
+			<name x="-161" y="-314">AddSensor</name>
+			<urgent/>
+		</location>
+		<location id="id18" x="195" y="-170">
+		</location>
+		<location id="id19" x="-671" y="-187">
+			<name x="-731" y="-212">Waiting</name>
+			<label kind="invariant" x="-705" y="-178">t&lt;1</label>
+		</location>
+		<location id="id20" x="-357" y="-272">
+			<urgent/>
+		</location>
+		<location id="id21" x="51" y="-272">
+			<name x="25" y="-306">ProcessingAdd</name>
+			<committed/>
+		</location>
+		<location id="id22" x="-348" y="-102">
+			<urgent/>
+		</location>
+		<location id="id23" x="59" y="-102">
+			<name x="8" y="-85">ProcessingRemove</name>
+			<committed/>
+		</location>
+		<branchpoint id="id24" x="-467" y="-187">
+		</branchpoint>
+		<init ref="id19"/>
+		<transition>
+			<source ref="id22"/>
+			<target ref="id19"/>
+			<label kind="guard" x="-595" y="-68">(sensorInSolution - 
+sss[indexSSS])&lt; 
+MIN_SENSOR</label>
+			<nail x="-348" y="0"/>
+			<nail x="-671" y="0"/>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id19"/>
+			<label kind="guard" x="-612" y="-340">(sensorInSolution + 
+sss[indexSSS])&gt; 
+MAX_SENSOR</label>
+			<nail x="-357" y="-348"/>
+			<nail x="-671" y="-348"/>
+		</transition>
+		<transition>
+			<source ref="id22"/>
+			<target ref="id16"/>
+			<label kind="guard" x="-306" y="-161">(sensorInSolution - 
+sss[indexSSS])&gt;= 
+MIN_SENSOR</label>
+			<label kind="assignment" x="-306" y="-102">sensorInSolution = 
+sensorInSolution - 
+sss[indexSSS]</label>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id17"/>
+			<label kind="guard" x="-297" y="-332">(sensorInSolution + 
+sss[indexSSS])&lt;= 
+MAX_SENSOR</label>
+			<label kind="assignment" x="-297" y="-272">sensorInSolution = 
+sensorInSolution + 
+sss[indexSSS]</label>
+		</transition>
+		<transition>
+			<source ref="id16"/>
+			<target ref="id23"/>
+			<label kind="synchronisation" x="-59" y="-127">sensor_out!</label>
+		</transition>
+		<transition>
+			<source ref="id17"/>
+			<target ref="id21"/>
+			<label kind="synchronisation" x="-68" y="-297">sensor_in!</label>
+		</transition>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id19"/>
+			<label kind="synchronisation" x="-229" y="0">serviced?</label>
+			<label kind="assignment" x="-212" y="25">t = 0</label>
+			<nail x="255" y="-170"/>
+			<nail x="255" y="25"/>
+			<nail x="-748" y="25"/>
+			<nail x="-748" y="-187"/>
+		</transition>
+		<transition>
+			<source ref="id23"/>
+			<target ref="id18"/>
+		</transition>
+		<transition>
+			<source ref="id21"/>
+			<target ref="id18"/>
+		</transition>
+		<transition>
+			<source ref="id24"/>
+			<target ref="id20"/>
+			<label kind="probability" x="-467" y="-247">p_ADD</label>
+		</transition>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id24"/>
+			<label kind="guard" x="-594" y="-213">t&lt;3</label>
+			<label kind="assignment" x="-654" y="-179">updateIndexSSS(indexSSS)</label>
+		</transition>
+		<transition>
+			<source ref="id24"/>
+			<target ref="id22"/>
+			<label kind="probability" x="-475" y="-136">p_REMOVE</label>
+		</transition>
+	</template>
+	<system>
+system ManagedSystem, AssistanceService, Sensor;
+    
+</system>
+	<queries>
+		<query>
+			<formula>simulate 1[&lt;=50]{AssistanceService.avgFRate}
+			</formula>
+			<comment>
+			</comment>
+		</query>
+	</queries>
+</nta>
